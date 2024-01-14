@@ -1,6 +1,6 @@
 /* src/css/global.css */
 /* src/assets/global.css */
-body {
+/* body {
     font-family: 'Arial', sans-serif;
     background-color: #f4f4f4;
     color: #333;
@@ -11,7 +11,7 @@ body {
 }
 
 .btn-primary {
-    background-color: #4CAF50; /* Verde Tangle */
+    background-color: #4CAF50;
     border: none;
     color: white;
     padding: 12px 20px;
@@ -38,4 +38,4 @@ body {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
-}
+} */

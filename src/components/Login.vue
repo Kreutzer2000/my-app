@@ -1,33 +1,29 @@
 <!-- src/components/Login.vue -->
 <template>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-12">
-                <div class="login-container animate__animated animate__fadeInUp">
-                    <h2 class="text-center">Iniciar Sesión</h2>
-                    <form @submit.prevent="login">
-                        <div class="form-group">
-                            <label for="usuario">Nombre de usuario</label>
-                            <input v-model="usuario" type="text" class="form-control" id="usuario" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contrasena">Contraseña</label>
-                            <input v-model="contrasena" type="password" class="form-control" id="contrasena" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="token">Token</label>
-                            <input v-model="token" type="text" class="form-control" id="token" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
-                    </form>
-                    <div class="text-center mt-3">
-                        <router-link to="/register" class="btn btn-link">¿No tienes una cuenta? Regístrate aquí</router-link>
-                    </div>
-                </div>
+    <div class="d-flex align-center justify-center" style="height: 100vh">
+        <v-sheet width="400" class="mx-auto">
+            <v-form @submit.prevent="login">
+                <!-- Campos de Texto para Usuario y Contraseña -->
+                <v-text-field variant="outlined" v-model="usuario" label="Nombre de Usuario" required></v-text-field>
+                <v-text-field variant="outlined" v-model="contrasena" label="Contraseña" type="password" required></v-text-field>
+                
+                <!-- Token (Opcional) -->
+                <v-text-field variant="outlined" v-model="token" label="Token" required></v-text-field>
+                
+                <!-- Esta implementacion se va a realizar posteriormente -->
+                <a href="#" class="text-body-2 font-weight-regular">¿Olvidaste tu contraseña?</a>
+                <!-- Botón de Iniciar Sesión -->
+                <v-btn type="submit" color="primary" block class="mt-2">Iniciar Sesión</v-btn>
+            </v-form>
+            
+            <!-- Enlace para Registrarse -->
+            <div class="mt-2">
+                <p class="text-body-2">¿No tienes una cuenta? <router-link to="/register">Regístrate aquí</router-link></p>
             </div>
-        </div>
+        </v-sheet>
     </div>
 </template>
+
 
 <script>
 import axios from 'axios';
@@ -36,7 +32,7 @@ import Swal from 'sweetalert2';
 export default {
     name: 'UserLogin',
     mounted() {
-        require('@/assets/global.css');
+        // require('@/assets/global.css');
     },
     data() {
         return {
@@ -84,22 +80,3 @@ export default {
 };
 </script>
 
-<style scoped>
-    .login-container {
-        background-color: #ffffff; /* Fondo claro para contrastar con el verde */
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-        transition: 0.3s;
-        width: 50%;
-        margin: 40px auto; /* Centrar */
-    }
-
-    .login-container:hover {
-        box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-    }
-
-    h2 {
-        color: #4CAF50; /* Verde Tangle */
-    }
-</style>

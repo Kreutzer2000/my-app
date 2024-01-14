@@ -1,56 +1,41 @@
 <!-- src/components/UserRegister.vue -->
 <template>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-12">
-                <div class="register-container animate__animated animate__fadeInUp">
-                    <h2 class="text-center">Registro</h2>
-                    <form @submit.prevent="register">
-                        
-                        <div class="form-group">
-                            <label for="nombre">Nombre</label>
-                            <input v-model="nombre" type="text" class="form-control" id="nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="apellido">Apellido</label>
-                            <input v-model="apellido" type="text" class="form-control" id="apellido" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input v-model="email" type="email" class="form-control" id="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="telefono">Teléfono</label>
-                            <input v-model="telefono" type="tel" class="form-control" id="telefono" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="usuario">Nombre de usuario</label>
-                            <input v-model="usuario" type="text" class="form-control" id="usuario" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contrasena">Contraseña</label>
-                            <input v-model="contrasena" type="password" class="form-control" id="contrasena" required>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block">Registrar</button>
-                        <div class="text-center mt-3">
-                            <router-link to="/login" class="btn btn-link">¿Ya tienes una cuenta? Inicia sesión aquí</router-link>
-                        </div>
-                    </form>
-                </div>
+    <div class="d-flex align-center justify-center" style="height: 100vh">
+        <v-sheet width="400" class="mx-auto">
+            <v-form @submit.prevent="register" ref="form">
+                <!-- Campos de Texto para Registro -->
+                <v-text-field variant="outlined" v-model="nombre" label="Nombre" required></v-text-field>
+                <v-text-field variant="outlined" v-model="apellido" label="Apellido" required></v-text-field>
+                <v-text-field variant="outlined" v-model="email" label="Email" type="email" required></v-text-field>
+                <v-text-field variant="outlined" v-model="telefono" label="Teléfono" type="tel" required></v-text-field>
+                <v-text-field variant="outlined" v-model="usuario" label="Nombre de Usuario" required></v-text-field>
+                <v-text-field variant="outlined" v-model="contrasena" label="Contraseña" type="password" required></v-text-field>
+                
+                <!-- Botón de Registro -->
+                <v-btn type="submit" color="secondary" block class="mt-2">Registrar</v-btn>
+            </v-form>
+            
+            <!-- Enlace para Iniciar Sesión -->
+            <div class="mt-2">
+                <p class="text-body-2">¿Ya tienes una cuenta? <router-link to="/login">Inicia sesión aquí</router-link></p>
             </div>
-        </div>
+        </v-sheet>
     </div>
 </template>
-  
+
 <script>
-    import axios from 'axios';
-    // import Swal from 'sweetalert2'; // Si quieres usar SweetAlert2
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { useRouter } from 'vue-router'; // Importa useRouter
 
     export default {
         name: 'UserRegister',
         mounted() {
-            require('@/assets/global.css');
+            // require('@/assets/global.css');
+        },
+        setup() {
+            const router = useRouter(); // Utiliza useRouter
+            return { router };
         },
         data() {
             return {
@@ -63,7 +48,46 @@
             };
         },
         methods: {
+            esSoloLetras(input) {
+                const regex = /^[a-zA-Z\s]+$/;
+                return regex.test(input);
+            },
+            esUsuarioValido(input) {
+                const regex = /^[a-zA-Z0-9]+$/;
+                return regex.test(input);
+            },
+            esSoloNumeros(input) {
+                const regex = /^\d+$/;
+                return regex.test(input);
+            },
+            esCorreoValido(email) {
+                const regex = /\S+@\S+\.\S+/; // Expresión regular para validar el email
+                return regex.test(email);
+            },
             async register() {
+
+                // Validaciones
+                if (!this.esSoloLetras(this.nombre) || !this.esSoloLetras(this.apellido)) {
+                    Swal.fire('Error', 'Nombre y apellido solo deben contener letras.', 'error');
+                    return;
+                }
+                if (!this.esUsuarioValido(this.usuario)) {
+                    Swal.fire('Error', 'El usuario solo puede contener letras y números.', 'error');
+                    return;
+                }
+                if (!this.esCorreoValido(this.email)) {
+                    Swal.fire('Error', 'Por favor, ingrese información válida para el Email. Recuerda que el email siempre debe tener el "@".', 'error');
+                    return;
+                }
+                if (!this.esSoloNumeros(this.telefono)) {
+                    Swal.fire('Error', 'El número de teléfono solo puede contener números.', 'error');
+                    return;
+                }
+                if (!this.nombre || !this.apellido || !this.email || !this.telefono || !this.usuario || !this.contrasena) {
+                    Swal.fire('Error', 'Por favor, complete todos los campos.', 'error');
+                    return;
+                }
+
                 try {
                     const response = await axios.post('http://localhost:3004/register', {
                         nombre: this.nombre,
@@ -73,34 +97,45 @@
                         contrasena: this.contrasena,
                         telefono: this.telefono
                     });
-                    alert('Usuario registrado con éxito');
-                    console.log(response.data);
-                    // Redirigir al usuario o limpiar el formulario
+                    // Si el servidor responde con éxito
+                    if (response.status === 201) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Registrado con Éxito',
+                            text: 'El usuario ha sido registrado exitosamente.'
+                        }).then((result) => {
+                            if (result.isConfirmed || result.isDismissed) {
+                                // Limpia los campos del formulario
+                                this.nombre = '';
+                                this.apellido = '';
+                                this.email = '';
+                                this.usuario = '';
+                                this.contrasena = '';
+                                this.telefono = '';
+                                // Redirige al login
+                                this.router.push('/login');
+                            }
+                        });
+                    } else {
+                        // Manejar respuestas que no son de creación exitosa (201)
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error en el registro',
+                            text: response.data || 'Error al registrar usuario'
+                        });
+                    }
                 } catch (error) {
                     console.error(error);
-                    alert('Error al registrar el usuario');
+                    // Verificar si es un error de respuesta del servidor
+                    let message = (error.response && error.response.data) || 'Error en el servidor';
+                    // Usar SweetAlert para mostrar el error
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al Registrar',
+                        text: message
+                    });
                 }
             }
         }
     };
 </script>
-
-<style scoped>
-    .register-container {
-        background-color: #ffffff;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-        transition: 0.3s;
-        width: 50%;
-        margin: 40px auto;
-    }
-
-    .register-container:hover {
-        box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-    }
-
-    h2 {
-        color: #4CAF50;
-    }
-</style>
