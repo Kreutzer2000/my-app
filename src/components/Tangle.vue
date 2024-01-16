@@ -51,11 +51,23 @@
 					Ten en cuenta que mientras más grande sea el tamaño del archivo, más tiempo podría demorar su procesamiento en la red Tangle.
 				</v-alert>
                 <br>
-				<v-file-input label="Cargar Archivo" class="mb-2" @change="uploadFile"></v-file-input>
-            
+				
+                <v-file-input label="Cargar Archivo" class="mb-2" ref="fileInput"></v-file-input>
+                <v-btn color="primary" block class="mt-2" @click="uploadFile">Subir Archivo</v-btn>
+
+                <br>
+                <!-- Sección de Notificaciones -->
+		<v-alert
+                    v-model="showAlert"
+                    :type="alertType"
+                    dismissible>
+                    {{ alertMessage }}
+                    <span v-if="showAlert"> (Desaparecerá en {{ timerCount }} segundos)</span>
+                </v-alert>
+
 				<v-text-field label="Ingresa el Block ID" class="mt-2" v-model="blockId"></v-text-field>
 				<v-btn color="secondary" block class="mt-2" @click="retrieveFile(blockId)">Consultar BlockID</v-btn>
-            
+                
 				<v-row justify="center" class="mt-4">
 					<v-col cols="4">
 						<v-text-field label="Ingresa el teléfono" v-model="phone"></v-text-field>
@@ -124,15 +136,6 @@
                 </v-card>
 			</v-col>
 		</v-row>
-    
-		<!-- Sección de Notificaciones -->
-		<div v-if="showAlert" class="mt-4">
-			<v-alert type="success">
-				<span>{{ alertMessage }}</span>
-				<span class="ml-2">{{ timer }}</span>
-			</v-alert>
-		</div>
-    
 
         <!-- Contenedor para la tabla de datos y archivos asociados -->
         <v-container>
@@ -281,6 +284,7 @@
 
 <script>
     import axios from 'axios';
+import Swal from 'sweetalert2';
 
     export default {
         name: 'TanglePage',
@@ -295,10 +299,12 @@
                 userData: [],
                 showAlert: false,
                 alertMessage: '',
-                timer: '',
+                timer: null,
+                timerCount: 30,
                 showDataContainer: true,
                 showFilesList: true,
                 files: [],
+                alertType: 'success', // puede ser 'success' o 'error'
                 transmissionImage: require('@/assets/img/imagendetransmisiondedatos.png'),
                 logo_paip: require('@/assets/img/LOGO_PAIP.png'),
             };
@@ -334,9 +340,87 @@
                     console.error('Error al obtener los datos del usuario:', error);
                 }
             },
-            // uploadFile(event) {
-            //   // Lógica para manejar la carga de archivo
-            // },
+            uploadFile() {
+                const fileInput = this.$refs.fileInput;  // Referencia al v-file-input
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    this.sendFileToServer(file);
+                } else {
+                    Swal.fire({
+                        title: 'No hay archivo seleccionado',
+                        text: 'Por favor, selecciona un archivo para subir.',
+                        icon: 'warning',
+                        confirmButtonText: 'Ok'
+                    });
+                }
+            },
+            async sendFileToServer(file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await axios.post('http://localhost:3006/uploadToAzure', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        }
+                    });
+
+                    // Recibir el hash y la URL de Azure Blob del servidor
+                    const { hashSHA3, azureBlobUrl } = response.data;
+                    console.log('URL del archivo en Azure:', azureBlobUrl);
+                    console.log('Hash SHA-3:', hashSHA3);
+
+                    // Enviar el hash y la URL de Azure Blob al servidor Tangle
+                    await this.sendHashToTangle(hashSHA3, azureBlobUrl);
+                } catch (error) {
+                    let message = '';
+                    if (!error.response) {
+                        message = 'Error de conexión con el servidor de Azure Storage. Por favor, inténtalo de nuevo más tarde.';
+                    } else {
+                        message = `Error al subir el archivo: ${error.response.data.message || error.message}`;
+                    }
+                
+                    Swal.fire({
+                        title: 'Error',
+                        text: message,
+                        icon: 'error',
+                        confirmButtonText: 'Ok'
+                    });
+                }
+            },
+            async sendHashToTangle(hashSHA3, azureBlobUrl) {
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    this.alertMessage = 'No hay userId almacenado';
+                    this.alertType = 'error';
+                    this.showAlert = true;
+                    return;
+                }
+                try {
+                    const response = await axios.post('http://localhost:3005/upload', {
+                        hash: hashSHA3,
+                        azureBlobUrl: azureBlobUrl,
+                        usuarioId: userId // Reemplazar con el ID del usuario real
+                    });
+                
+                    const blockId = response.data.blockId;
+                    console.log('Block ID:', blockId);
+                    
+                    if (response.data.blockId) {
+                        console.log('Transacción enviada con éxito. Block ID:', response.data.blockId);
+                        // Realizar acciones adicionales si es necesario
+                        this.showAlertWithTimer('Transacción enviada con éxito. Block ID: ', 'success');
+                    }
+                    else
+                    {
+                        console.error('Block ID no está presente en la respuesta del servidor');
+                        this.showAlertWithTimer('Block ID no está presente en la respuesta del servidor', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error al enviar a Tangle:', error);
+                    this.showAlertWithTimer('Error al enviar a Tangle', 'error');
+                }
+            },
             // retrieveFile(blockId) {
             //   // Lógica para recuperar archivo usando blockId
             // },
@@ -350,7 +434,27 @@
 this.showUserData = false; // Ocultar los datos
 this.userData = []; // Limpiar la lista de datos
 	},
-            // ... otros métodos ...
+            showAlertWithTimer(message, type) {
+                this.alertMessage = message;
+                this.alertType = type;
+                this.showAlert = true;
+                this.resetAndStartTimer();
+            },
+
+            resetAndStartTimer() {
+                this.timerCount = 30; // Reiniciar el contador a 30 segundos
+                if (this.timer) {
+                    clearInterval(this.timer); // Limpia el temporizador existente
+                }
+                this.timer = setInterval(() => {
+                    if (this.timerCount > 0) {
+                        this.timerCount--;
+                    } else {
+                        clearInterval(this.timer);
+                        this.showAlert = false;
+                    }
+                }, 1000);
+            },
         }
     };
 </script>
