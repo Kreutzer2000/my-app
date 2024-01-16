@@ -1,4 +1,5 @@
 // src/main.js
+import '@mdi/font/css/materialdesignicons.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import vuetify from './plugins/vuetify'; // Asegúrate de que la ruta sea correcta
