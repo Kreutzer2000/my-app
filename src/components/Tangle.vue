@@ -35,7 +35,7 @@
         <v-main>
             <v-container>
 		<v-row justify="center">
-			<v-col cols="12" md="8" class="text-center">
+			<v-col cols="12" md="10" class="text-center">
 				<h1>Red Tangle Cliente/Servidor</h1>
 				<p>
 					Realizado por Renzo Di Paola Jara - Desarrollador Full Stack .Net, Python y NodeJS
@@ -46,7 +46,7 @@
 		</v-row>
     
 		<v-row justify="center">
-			<v-col cols="12" md="6">
+			<v-col cols="12" md="10">
 				<v-alert type="info">
 					Ten en cuenta que mientras más grande sea el tamaño del archivo, más tiempo podría demorar su procesamiento en la red Tangle.
 				</v-alert>
@@ -73,8 +73,12 @@
 						<v-text-field label="Ingresa el teléfono" v-model="phone"></v-text-field>
 					</v-col>
 					<v-col cols="4">
-						<v-select :items="users" label="Selecciona un usuario" v-model="selectedUser"></v-select>
-					</v-col>
+                        <v-select 
+                            :items="formattedUsers" 
+                            label="Selecciona un usuario" 
+                            v-model="selectedUser"
+                        ></v-select>
+                    </v-col>
 					<v-col cols="4">
 						<v-btn color="secondary" block @click="retrieveFileByPhone(phone)">Recuperar Archivo</v-btn>
 					</v-col>
@@ -141,29 +145,53 @@
         <v-container>
             <!-- Sección de Tabla de Datos -->
             <v-row justify="center">
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="10">
                     <v-btn color="primary" @click="toggleDataContainer">Ocultar/Mostrar Datos</v-btn>
                     <v-container v-show="showDataContainer">
-                        <v-simple-table class="mt-4">
-                            <thead>
+                        <v-data-table
+                            :headers="headers"
+                            :items="transaccionData ? [transaccionData] : []"
+                            :no-data-text="'No hay datos para mostrar'"
+                            class="elevation-1"
+                        >
+                            <template v-slot:item="{ item }">
                                 <tr>
-                                    <th class="text-center">Usuario</th>
-                                    <th class="text-center">BlockID</th>
-                                    <th class="text-center">HashSHA3</th>
-                                    <th class="text-center">Fecha de Transacción</th>
+                                    <td>
+                                        <v-tooltip bottom>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <span v-bind="attrs" v-on="on">{{ item.usuario }}</span>
+                                            </template>
+                                            <span>{{ item.usuario }}</span>
+                                        </v-tooltip>
+                                    </td>
+                                    <td class="break-word">
+                                        <v-tooltip bottom>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <span v-bind="attrs" v-on="on">{{ item.blockId }}</span>
+                                            </template>
+                                            <span>{{ item.blockId }}</span>
+                                        </v-tooltip>
+                                    </td>
+                                    <td class ="break-word">
+                                        <v-tooltip bottom>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <span v-bind="attrs" v-on="on">{{ item.hashSHA3 }}</span>
+                                            </template>
+                                            <span>{{ item.hashSHA3 }}</span>
+                                        </v-tooltip>
+                                    </td>
+                                    <td>{{ item.fechaTransaccion }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Aquí se insertarán las filas de datos desde JavaScript -->
-                            </tbody>
-                        </v-simple-table>
+                            </template>
+                        </v-data-table>
                     </v-container>
                 </v-col>
             </v-row>
+
         
             <!-- Sección de Archivos Asociados -->
             <v-row justify="center">
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="10">
                     <h3>Archivos asociados:</h3>
                     <v-container v-show="showFilesList">
                         <!-- Aquí se insertarán los archivos desde JavaScript -->
@@ -177,7 +205,7 @@
                 <v-col cols="12">
                     <v-card class="pa-5" elevation="2">
                         <v-row justify="center">
-                            <v-col cols="12" md="10" lg="8">
+                            <v-col cols="12" md="12" lg="12">
                                 <v-sheet elevation="2" class="pa-5" rounded="lg">
                                     <h2 class="text-h5 mb-4">Descripción del Proyecto</h2>
                                     <p>Este proyecto constituye una Prueba de Concepto (PoC) que ilustra la implementación de una red Tangle en una arquitectura cliente/servidor. 
@@ -292,9 +320,11 @@ import Swal from 'sweetalert2';
             return {
                 drawer: false, // Asegúrate de definir 'drawer' aquí
                 blockId: '',
+                transaccionData: null,
                 phone: '',
                 selectedUser: null,
                 users: [], // Suponiendo que esto se llenará con datos de usuarios
+                selectedUserId: null,
                 showUserData: false,
                 userData: [],
                 showAlert: false,
@@ -304,10 +334,35 @@ import Swal from 'sweetalert2';
                 showDataContainer: true,
                 showFilesList: true,
                 files: [],
+                headers: [
+                    { text: 'Usuario', value: 'userInfo.usuario' },
+                    { text: 'BlockID', value: 'blockId' },
+                    { text: 'HashSHA3', value: 'hashSHA3' },
+                    { text: 'Fecha de Transacción', value: 'fechaTransaccion' },
+                ],
                 alertType: 'success', // puede ser 'success' o 'error'
                 transmissionImage: require('@/assets/img/imagendetransmisiondedatos.png'),
                 logo_paip: require('@/assets/img/LOGO_PAIP.png'),
             };
+        },
+        computed: {
+        formattedUsers() {
+                // return this.users.map(user => ({
+                //     text: user.nombre + ' ' + user.apellido, // Esto se muestra en el selector
+                //     value: user._id // Esto se usa como valor interno
+                // }));
+                // Devuelve solo una cadena para cada usuario
+                //return this.users.map(user => `${user.nombre} ${user.apellido}`);
+                return this.users.map(user => `${user.usuario}`);
+            }
+        },
+        watch: {
+            selectedUser(newValue) {
+                //const foundUser = this.users.find(user => `${user.nombre} ${user.apellido}` === newValue);
+                const foundUser = this.users.find(user => `${user.usuario}` === newValue);
+                this.selectedUserId = foundUser ? foundUser._id : null;
+                console.log('Usuario seleccionado:', this.selectedUserId);
+            }
         },
         methods: {
             logout() {
@@ -409,7 +464,8 @@ import Swal from 'sweetalert2';
                     if (response.data.blockId) {
                         console.log('Transacción enviada con éxito. Block ID:', response.data.blockId);
                         // Realizar acciones adicionales si es necesario
-                        this.showAlertWithTimer('Transacción enviada con éxito. Block ID: ', 'success');
+                        this.showAlertWithTimer('Transacción enviada con éxito. Block ID: ' + blockId, 'success');
+                        this.blockId = blockId;
                     }
                     else
                     {
@@ -421,9 +477,63 @@ import Swal from 'sweetalert2';
                     this.showAlertWithTimer('Error al enviar a Tangle', 'error');
                 }
             },
-            // retrieveFile(blockId) {
-            //   // Lógica para recuperar archivo usando blockId
-            // },
+            async retrieveFile(blockId) {
+                if (!blockId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Ningún Block ID ingresado',
+                        text: 'Por favor, ingresa un Block ID para consultar.',
+                    });
+                    return;
+                }
+
+                try {
+                    const response = await axios.get(`http://localhost:3005/retrieve/${blockId}`);
+                    if (response.data && response.data.transaccion && response.data.userInfo) {
+                        this.transaccionData = {
+                            usuario: response.data.userInfo.usuario,
+                            blockId: response.data.transaccion.blockId,
+                            hashSHA3: response.data.transaccion.hashSHA3,
+                            fechaTransaccion: this.formatearFechaTransaccion(response.data.transaccion.fechaTransaccion)
+                        };
+                    } else {
+                        this.transaccionData = null;
+                        // Opcionalmente mostrar un mensaje de error o alerta
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Datos incompletos',
+                            text: 'La respuesta del servidor no contiene todos los datos necesarios.',
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error al recuperar información:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al recuperar datos',
+                        text: 'Ocurrió un error al intentar recuperar los datos del Block ID.',
+                    });
+                }
+            },
+            processRetrievedData(data) {
+                if (data && data.transaccion && data.userInfo) {
+                    // Asegúrate de que todos los campos necesarios están presentes
+                    this.transaccionData = {
+                        usuario: data.userInfo.usuario,
+                        transaccion: {
+                            blockId: data.transaccion.blockId,
+                            hashSHA3: data.transaccion.hashSHA3,
+                            fechaTransaccion: data.transaccion.fechaTransaccion
+                        }
+                    };
+                } else {
+                    // Maneja el caso en que los datos no estén completos
+                    this.transaccionData = null;
+                }
+            },
+            formatearFechaTransaccion(fecha) {
+                const date = new Date(fecha);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            },
             // retrieveFileByPhone(phone) {
             //   // Lógica para recuperar archivo por teléfono
             // },
@@ -455,6 +565,35 @@ this.userData = []; // Limpiar la lista de datos
                     }
                 }, 1000);
             },
+            async getAllUsers() {
+                try {
+                    const response = await axios.get('http://localhost:3001/getAllUsers');
+                    console.log('Usuarios:', response.data);
+                    this.users = response.data;
+                } catch (error) {
+                    console.error('Error al obtener los usuarios:', error);
+                    
+                    // Verificar si es un error de red (ej. problema de conexión)
+                    if (!error.response) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Conexión',
+                            text: 'No se pudo conectar al servidor. Por favor, verifica tu conexión a Internet.',
+                        });
+                    } else {
+                        // Manejar otros tipos de errores (ej. respuestas del servidor como 500, 404, etc.)
+                        const message = error.response.data.message || 'Ocurrió un error al cargar los datos de los usuarios.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error del Servidor',
+                            text: message,
+                        });
+                    }
+                }
+            },
+        },
+        mounted() {
+            this.getAllUsers(); // Llamar al método cuando el componente se monta
         }
     };
 </script>
@@ -483,6 +622,18 @@ this.userData = []; // Limpiar la lista de datos
 
     .v-list-item-subtitle {
       color: rgba(0,0,0,0.6); /* Un color más tenue para los subtítulos */
+    }
+
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .break-word {
+        word-break: break-all;
+        max-width: 300px; /* Puedes ajustar este valor según lo necesites */
+        overflow-wrap: anywhere;
     }
     
 </style>
