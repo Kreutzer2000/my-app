@@ -193,9 +193,28 @@
             <v-row justify="center">
                 <v-col cols="12" md="10">
                     <h3>Archivos asociados:</h3>
-                    <v-container v-show="showFilesList">
+                    <v-container>
                         <!-- Aquí se insertarán los archivos desde JavaScript -->
-                        <p v-if="!files.length">No hay archivos para mostrar.</p>
+                        <div v-if="files.length">
+                            <v-list>
+                                <v-list-item-group>
+                                    <v-list-item v-for="file in files" :key="file.url">
+                                        <v-list-item-icon>
+                                            <v-icon>{{ file.icon }}</v-icon>
+                                        </v-list-item-icon>
+                                        <v-list-item-content>
+                                            <v-list-item-title>{{ file.name }}</v-list-item-title>
+                                        </v-list-item-content>
+                                        <v-list-item-action>
+                                            <v-btn icon :href="file.url" target="_blank">
+                                                <v-icon>mdi-download</v-icon>
+                                            </v-btn>
+                                        </v-list-item-action>
+                                    </v-list-item>
+                                </v-list-item-group>
+                            </v-list>
+                        </div>
+                        <p v-else>No hay archivos para mostrar.</p>
                     </v-container>
                 </v-col>
             </v-row>
@@ -343,10 +362,27 @@ import Swal from 'sweetalert2';
                 alertType: 'success', // puede ser 'success' o 'error'
                 transmissionImage: require('@/assets/img/imagendetransmisiondedatos.png'),
                 logo_paip: require('@/assets/img/LOGO_PAIP.png'),
+                fileIconsMap: {
+                    'txt': 'mdi-file-document-outline',
+                    'xlsx': 'mdi-file-excel',
+                    'xls': 'mdi-file-excel',
+                    'doc': 'mdi-file-word',
+                    'docx': 'mdi-file-word',
+                    'pdf': 'mdi-file-pdf',
+                    'ppt': 'mdi-file-powerpoint',
+                    'pptx': 'mdi-file-powerpoint',
+                    'jpg': 'mdi-file-image',
+                    'jpeg': 'mdi-file-image',
+                    'png': 'mdi-file-image',
+                    'gif': 'mdi-file-image',
+                    'zip': 'mdi-zip-box',
+                    'rar': 'mdi-zip-box',
+                    // ... otros mapeos de extensión
+                },
             };
         },
         computed: {
-        formattedUsers() {
+            formattedUsers() {
                 // return this.users.map(user => ({
                 //     text: user.nombre + ' ' + user.apellido, // Esto se muestra en el selector
                 //     value: user._id // Esto se usa como valor interno
@@ -534,9 +570,86 @@ import Swal from 'sweetalert2';
                 const date = new Date(fecha);
                 return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             },
-            // retrieveFileByPhone(phone) {
-            //   // Lógica para recuperar archivo por teléfono
-            // },
+            async retrieveFileByPhone(phone) {
+                if (!this.selectedUserId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Ningún usuario seleccionado',
+                        text: 'Por favor, selecciona un usuario del menú desplegable.',
+                    });
+                    return;
+                }
+                if (!phone.match(/^\d+$/)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Número de teléfono inválido',
+                        text: 'Por favor, ingresa sólo números en el campo de teléfono.',
+                    });
+                    return;
+                }
+            
+                try {
+                    const response = await axios.get(`http://localhost:3005/retrieveByPhone/${phone}/${this.selectedUserId}`);
+                    console.log('Respuesta del servidor:', response.data, 'Response type:', typeof response.data, 'Response length:', 
+                    response.data.length, 'Response:', response);
+                    if (!response.data || response.data.length === 0) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'No se encontraron transacciones',
+                            text: 'No hay transacciones asociadas a este número de teléfono y usuario.',
+                        });
+                        this.files = [];
+                        return;
+                    }
+                
+                    // Procesar y mostrar los archivos recibidos
+                    this.files = response.data.map(file => {
+                        console.log('Procesando archivo:', file);
+                        
+                        // Verificar si dbData existe y tiene la propiedad ArchivoCifradoURL
+                        if (file.dbData && typeof file.dbData.archivoCifradoURL === 'string') {
+                            // Decodificar la URL
+                            const decodedUrl = decodeURIComponent(file.dbData.archivoCifradoURL);
+                            console.log('URL decodificada del archivo:', decodedUrl);
+
+                            const fileName = decodedUrl.split('/').pop();
+                            const fileExtension = fileName.split('.').pop().toLowerCase();
+                            const fileIcon = this.fileIconsMap[fileExtension] || 'fa-file';
+                            console.log('Nombre del archivo:', fileName, 'Extensión:', fileExtension, 'Icono:', fileIcon);
+
+                            return { name: fileName, url: decodedUrl, icon: fileIcon };
+                        } else {
+                            console.log('dbData no tiene propiedad archivoCifradoURL válida o no es una cadena:', file.dbData);
+                            return null;
+                        }
+                    }).filter(file => file !== null);
+                
+                    console.log('Archivos procesados:', this.files);
+                    
+                    // Asegúrate de que showFilesList esté en true para mostrar los archivos
+                    this.showFilesList = true;
+                    console.log('Estado de showFilesList:', this.showFilesList);
+                } catch (error) {
+                    console.error('Error:', error);
+                    if (error.response && error.response.status === 404) {
+                        // Manejar específicamente el error 404
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'No se encontraron transacciones',
+                            text: 'No hay transacciones asociadas a este número de teléfono y usuario.',
+                        });
+                        this.files = [];
+                    } else {
+                        // Manejar otros tipos de errores
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al recuperar datos',
+                            text: 'Ocurrió un error al intentar recuperar los datos.',
+                        });
+                    }
+                }
+            },
             toggleDataContainer() {
                 this.showDataContainer = !this.showDataContainer;
             },
@@ -634,6 +747,14 @@ this.userData = []; // Limpiar la lista de datos
         word-break: break-all;
         max-width: 300px; /* Puedes ajustar este valor según lo necesites */
         overflow-wrap: anywhere;
+    }
+
+    .v-list-item {
+        align-items: center;
+    }
+
+    .v-list-item-icon {
+        margin-right: 10px;
     }
     
 </style>
