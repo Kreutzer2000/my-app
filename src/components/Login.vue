@@ -4,37 +4,20 @@
         <v-sheet width="400" class="mx-auto">
             <v-form ref="form" @submit.prevent="login" v-model="valid">
                 <!-- Campos de Texto para Usuario y Contraseña -->
-                <v-text-field
-                    variant="outlined"
-                    v-model="usuario"
-                    :rules="usuarioRules"
-                    label="Nombre de Usuario"
-                    required
-                ></v-text-field>
-                <v-text-field
-                    variant="outlined"
-                    v-model="contrasena"
-                    :rules="contrasenaRules"
-                    label="Contraseña"
-                    type="password"
-                    required
-                ></v-text-field>
-                
+                <v-text-field variant="outlined" v-model="usuario" :rules="usuarioRules" label="Nombre de Usuario"
+                    required></v-text-field>
+                <v-text-field variant="outlined" v-model="contrasena" :rules="contrasenaRules" label="Contraseña"
+                    type="password" required></v-text-field>
+
                 <!-- Token (Opcional) -->
-                <v-text-field
-                    variant="outlined"
-                    v-model="token"
-                    :rules="tokenRules"
-                    label="Token"
-                    required
-                ></v-text-field>
-                
+                <v-text-field variant="outlined" v-model="token" :rules="tokenRules" label="Token" required></v-text-field>
+
                 <!-- Esta implementacion se va a realizar posteriormente -->
                 <a href="#" class="text-body-2 font-weight-regular">¿Olvidaste tu contraseña?</a>
                 <!-- Botón de Iniciar Sesión -->
                 <v-btn :disabled="!valid" type="submit" color="primary" block class="mt-2">Iniciar Sesión</v-btn>
             </v-form>
-            
+
             <!-- Enlace para Registrarse -->
             <div class="mt-2">
                 <p class="text-body-2">¿No tienes una cuenta? <router-link to="/register">Regístrate aquí</router-link></p>
@@ -70,8 +53,8 @@ export default {
         async login() {
 
             if (this.$refs.form.validate()) {
-				// Si todas las validaciones son correctas, proceder con el inicio de sesión
-				try {
+                // Si todas las validaciones son correctas, proceder con el inicio de sesión
+                try {
                     const response = await axios.post('http://localhost:3004/login', {
                         usuario: this.usuario,
                         contrasena: this.contrasena,
@@ -84,7 +67,7 @@ export default {
                     if (response.data.userId) {
                         localStorage.setItem('accessToken', response.data.token);
                         localStorage.setItem('userId', response.data.userId);
-                    
+
                         console.log('UserId almacenado:', localStorage.getItem('userId'));
                     } else {
                         console.error('UserId no está presente en la respuesta del servidor');
@@ -109,15 +92,15 @@ export default {
                     }
                     console.error(error);
                 }
-			} else {
-				// Si no, mostrar un mensaje de error
-				Swal.fire({
-					icon: 'error',
-					title: 'Formulario incompleto',
-					text: 'Por favor complete todos los campos requeridos para iniciar sesión.',
-				});
-			}
-            
+            } else {
+                // Si no, mostrar un mensaje de error
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formulario incompleto',
+                    text: 'Por favor complete todos los campos requeridos para iniciar sesión.',
+                });
+            }
+
         }
     },
     forceReload() {
