@@ -90,7 +90,7 @@ export default {
             }
 
             try {
-                const response = await axios.post('http://localhost:3004/register', {
+                const response = await axios.post('http://authservice.luxen.club/register', {
                     nombre: this.nombre,
                     apellido: this.apellido,
                     email: this.email,

@@ -313,7 +313,7 @@ export default {
                     throw new Error('No hay userId almacenado');
                 }
 
-                const response = await axios.get(`http://localhost:3001/getProfile`, {
+                const response = await axios.get(`http://userservice.luxen.club/getProfile`, {
                     params: {
                         userId: userId
                     }
@@ -353,7 +353,7 @@ export default {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const response = await axios.post('http://localhost:3006/uploadToAzure', formData, {
+                const response = await axios.post('http://storageservice.luxen.club/uploadToAzure', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     }
@@ -391,7 +391,7 @@ export default {
                 return;
             }
             try {
-                const response = await axios.post('http://localhost:3005/upload', {
+                const response = await axios.post('http://blockchainservice.luxen.club/upload', {
                     hash: hashSHA3,
                     azureBlobUrl: azureBlobUrl,
                     usuarioId: userId // Reemplazar con el ID del usuario real
@@ -426,7 +426,7 @@ export default {
             }
 
             try {
-                const response = await axios.get(`http://localhost:3005/retrieve/${blockId}`);
+                const response = await axios.get(`http://blockchainservice.luxen.club/retrieve/${blockId}`);
                 if (response.data && response.data.transaccion && response.data.userInfo) {
                     this.transaccionData = {
                         usuario: response.data.userInfo.usuario,
@@ -491,7 +491,7 @@ export default {
             }
 
             try {
-                const response = await axios.get(`http://localhost:3005/retrieveByPhone/${phone}/${this.selectedUserId}`);
+                const response = await axios.get(`http://blockchainservice.luxen.club/retrieveByPhone/${phone}/${this.selectedUserId}`);
                 console.log('Respuesta del servidor:', response.data, 'Response type:', typeof response.data, 'Response length:',
                     response.data.length, 'Response:', response);
                 if (!response.data || response.data.length === 0) {
@@ -582,7 +582,7 @@ export default {
         },
         async getAllUsers() {
             try {
-                const response = await axios.get('http://localhost:3001/getAllUsers');
+                const response = await axios.get('http://userservice.luxen.club/getAllUsers');
                 console.log('Usuarios:', response.data);
                 this.users = response.data;
             } catch (error) {

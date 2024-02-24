@@ -79,7 +79,7 @@ export default {
 					throw new Error('No hay userId almacenado');
 				}
 
-				const response = await axios.get(`http://localhost:3001/getProfile`, {
+				const response = await axios.get(`http://userservice.luxen.club/getProfile`, {
 					params: {
 						userId: userId
 					}
@@ -114,7 +114,7 @@ export default {
 
 				// Hacer la petición POST al servidor para actualizar el perfil
 				try {
-					const response = await axios.post('http://localhost:3001/updateProfile', profileData);
+					const response = await axios.post('http://userservice.luxen.club/updateProfile', profileData);
 
 					// Verificar si la respuesta del servidor es exitosa
 					if (response.status === 200 || response.status === 201) {

@@ -55,7 +55,7 @@ export default {
             if (this.$refs.form.validate()) {
                 // Si todas las validaciones son correctas, proceder con el inicio de sesión
                 try {
-                    const response = await axios.post('http://localhost:3004/login', {
+                    const response = await axios.post('http://authservice.luxen.club/login', {
                         usuario: this.usuario,
                         contrasena: this.contrasena,
                         token: this.token

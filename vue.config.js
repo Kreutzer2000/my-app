@@ -9,4 +9,7 @@ module.exports = defineConfig({
       title: 'Mi App Tangle',
     },
   },
+  devServer: {
+    allowedHosts: "all",
+  },
 })
