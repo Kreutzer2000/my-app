@@ -1,24 +1,30 @@
 <!-- src/components/UserRegister.vue -->
 <template>
-    <div class="d-flex align-center justify-center" style="height: 100vh">
+    <div class="d-flex align-center justify-center">
         <v-sheet width="400" class="mx-auto">
-            <v-form @submit.prevent="register" ref="form">
-                <!-- Campos de Texto para Registro -->
-                <v-text-field variant="outlined" v-model="nombre" label="Nombre" required></v-text-field>
-                <v-text-field variant="outlined" v-model="apellido" label="Apellido" required></v-text-field>
-                <v-text-field variant="outlined" v-model="email" label="Email" type="email" required></v-text-field>
-                <v-text-field variant="outlined" v-model="telefono" label="Teléfono" type="tel" required></v-text-field>
-                <v-text-field variant="outlined" v-model="usuario" label="Nombre de Usuario" required></v-text-field>
-                <v-text-field variant="outlined" v-model="contrasena" label="Contraseña" type="password"
-                    required></v-text-field>
+            <div class="pt-12 text-center h-screen">
+                <v-form @submit.prevent="register" ref="form" enctype="multipart/form-data">
+                    <!-- Campos de Texto para Registro -->
+                    <v-text-field variant="outlined" v-model="nombre" label="Nombre" required></v-text-field>
+                    <v-text-field variant="outlined" v-model="apellido" label="Apellido" required></v-text-field>
+                    <v-text-field variant="outlined" v-model="email" label="Email" type="email" required></v-text-field>
+                    <v-text-field variant="outlined" v-model="telefono" label="Teléfono" type="tel" required></v-text-field>
+                    <v-text-field variant="outlined" v-model="usuario" label="Nombre de Usuario" required></v-text-field>
+                    <v-text-field variant="outlined" v-model="contrasena" label="Contraseña" type="password"
+                        required></v-text-field>
 
-                <!-- Botón de Registro -->
-                <v-btn type="submit" color="secondary" block class="mt-2">Registrar</v-btn>
-            </v-form>
+                    <!-- Componente de Captura de Imagen -->
+                    <image-capture @imageConfirmed="handleImageConfirmed"></image-capture>
 
-            <!-- Enlace para Iniciar Sesión -->
-            <div class="mt-2">
-                <p class="text-body-2">¿Ya tienes una cuenta? <router-link to="/login">Inicia sesión aquí</router-link></p>
+                    <!-- Botón de Registro -->
+                    <v-btn type="submit" color="secondary" block class="mt-2">Registrar</v-btn>
+                </v-form>
+
+                <!-- Enlace para Iniciar Sesión -->
+                <div class="mt-2 pb-10">
+                    <p class="text-body-2">¿Ya tienes una cuenta? <router-link to="/login">Inicia sesión aquí</router-link>
+                    </p>
+                </div>
             </div>
         </v-sheet>
     </div>
@@ -28,9 +34,13 @@
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router'; // Importa useRouter
+import ImageCapture from './Register/ImageCapture.vue';
 
 export default {
     name: 'UserRegister',
+    components: {
+        ImageCapture,
+    },
     mounted() {
         // require('@/assets/global.css');
     },
@@ -45,7 +55,8 @@ export default {
             email: '',
             usuario: '',
             contrasena: '',
-            telefono: ''
+            telefono: '',
+            faceImage: null,
         };
     },
     methods: {
@@ -64,6 +75,10 @@ export default {
         esCorreoValido(email) {
             const regex = /\S+@\S+\.\S+/; // Expresión regular para validar el email
             return regex.test(email);
+        },
+        handleImageConfirmed(imageData) {
+            // Aquí tienes la imagen como una cadena base64 que puedes enviar al backend
+            this.faceImage = imageData;
         },
         async register() {
 
@@ -88,15 +103,33 @@ export default {
                 Swal.fire('Error', 'Por favor, complete todos los campos.', 'error');
                 return;
             }
+            if (!this.faceImage) {
+                Swal.fire('Error', 'Por favor, capture o seleccione una imagen de su rostro.', 'error');
+                return;
+            }
+
+            // Convertir base64 a Blob
+            const fetchRes = await fetch(this.faceImage);
+            const blob = await fetchRes.blob();
+
+            // Crear un objeto File a partir del Blob
+            const file = new File([blob], "userImage.png", { type: "image/png" });
+
+            let formData = new FormData();
+            formData.append('nombre', this.nombre);
+            formData.append('apellido', this.apellido);
+            formData.append('email', this.email);
+            formData.append('usuario', this.usuario);
+            formData.append('contrasena', this.contrasena);
+            formData.append('telefono', this.telefono);
+            formData.append('faceImage', file);
+            console.log('Form Data:', formData.get('faceImage'));
 
             try {
-                const response = await axios.post('http://authservice.luxen.club/register', {
-                    nombre: this.nombre,
-                    apellido: this.apellido,
-                    email: this.email,
-                    usuario: this.usuario,
-                    contrasena: this.contrasena,
-                    telefono: this.telefono
+                const response = await axios.post('http://localhost:3004/register', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
                 });
                 // Si el servidor responde con éxito
                 if (response.status === 201) {

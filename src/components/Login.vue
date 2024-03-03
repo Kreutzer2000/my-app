@@ -10,7 +10,7 @@
                     type="password" required></v-text-field>
 
                 <!-- Token (Opcional) -->
-                <v-text-field variant="outlined" v-model="token" :rules="tokenRules" label="Token" required></v-text-field>
+                <!-- <v-text-field variant="outlined" v-model="token" :rules="tokenRules" label="Token" required></v-text-field> -->
 
                 <!-- Esta implementacion se va a realizar posteriormente -->
                 <a href="#" class="text-body-2 font-weight-regular">¿Olvidaste tu contraseña?</a>
@@ -23,30 +23,44 @@
                 <p class="text-body-2">¿No tienes una cuenta? <router-link to="/register">Regístrate aquí</router-link></p>
             </div>
         </v-sheet>
+
+        <v-dialog v-model="dialog" persistent max-width="600px">
+            <v-card>
+                <v-card-title class="text-h5">Verificación de Identidad</v-card-title>
+                <v-card-text>
+                    <ReconocimientoFacial @rostroReconocido="procesarRostroReconocido" />
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
 <script>
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import ReconocimientoFacial from './Login/ReconocimientoFacial.vue'; // Asegúrate de importar correctamente el componente
 
 export default {
     name: 'UserLogin',
+    components: {
+        ReconocimientoFacial
+    },
     data() {
         return {
             valid: false,
+            dialog: false,
             usuario: '',
             contrasena: '',
-            token: '',
+            // token: '',
             usuarioRules: [
                 v => !!v || 'El nombre de usuario es requerido',
             ],
             contrasenaRules: [
                 v => !!v || 'La contraseña es requerida',
             ],
-            tokenRules: [
-                v => !!v || 'El token es requerido',
-            ],
+            // tokenRules: [
+            //     v => !!v || 'El token es requerido',
+            // ],
         };
     },
     methods: {
@@ -54,11 +68,12 @@ export default {
 
             if (this.$refs.form.validate()) {
                 // Si todas las validaciones son correctas, proceder con el inicio de sesión
+                this.dialog = true;
                 try {
-                    const response = await axios.post('http://authservice.luxen.club/login', {
+                    const response = await axios.post('http://localhost:3004/login', {
                         usuario: this.usuario,
                         contrasena: this.contrasena,
-                        token: this.token
+                        // token: this.token
                     });
 
                     // Verifica que el userId está presente en la respuesta
